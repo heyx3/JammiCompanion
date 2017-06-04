@@ -13,9 +13,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-using NAudio;
-using NAudio.Wave;
-
 
 namespace JC
 {
@@ -38,26 +35,28 @@ namespace JC
 
 					//Start listening.
 					int deviceNumber = dropdown_AudioSource.SelectedIndex;
-					audioInput = new WaveIn();
-					audioInput.DeviceNumber = deviceNumber;
-					audioInput.WaveFormat = new WaveFormat(44100, 1);
-					audioInput.DataAvailable += AudioInputDataReceiver;
-					audioInput.RecordingStopped += AudioInputDataStopped;
-					audioInput.StartRecording();
+					audioInput = new CSCore.SoundIn.WaveIn(new CSCore.WaveFormat(44100, 16, 1));
+					audioInput.Device = CSCore.SoundIn.WaveInDevice.EnumerateDevices().Skip(deviceNumber).First();
+					audioInput.DataAvailable += Callback_AudioInput;
+					audioInput.Latency = 100;
+					audioInput.Initialize();
+					audioInput.Start();
 				}
 				else
 				{
 					button_ToggleListening.Content = "Start Listening";
 
 					//Stop listening.
-					audioInput.StopRecording();
+					detector.Dispose();
+					audioInput.Stop();
+					audioInput.Dispose();
 					audioInput = null;
 				}
 			}
 		}
 
-		private WaveIn audioInput = null;
-		private List<short> currentAudioData = new List<short>();
+		private CSCore.SoundIn.WaveIn audioInput = null;
+		private JammiSoundDetector detector;
 
 
 		public MainWindow()
@@ -66,6 +65,12 @@ namespace JC
 
 			dropdown_AudioSource.GotFocus += dropdown_AudioSource_GotFocus;
 			dropdown_AudioSource_GotFocus(null, null);
+
+			detector = new JammiSoundDetector(int.Parse(text_SampleIntervalSize.Text),
+											  float.Parse(text_InterestingSoundThreshold.Text),
+											  int.Parse(text_InterestingSoundMinSamples.Text),
+											  int.Parse(text_InterestingSoundEndSamples.Text));
+			detector.OnInterestingSound += Callback_InterestingSound;
 		}
 
 
@@ -77,21 +82,27 @@ namespace JC
 			base.OnClosed(e);
 		}
 
-		private void AudioInputDataReceiver(object sender, WaveInEventArgs e)
+
+		private void Callback_InterestingSound(float[] samples)
+		{
+			//DEBUG: Write it to a file.
+			string prefix = System.IO.Path.Combine(Environment.CurrentDirectory, "Jammi");
+			int i = 1;
+			while (System.IO.File.Exists(prefix + i + ".wav"))
+				i += 1;
+			using (var writer = new CSCore.Codecs.WAV.WaveWriter(prefix + i + ".wav", audioInput.WaveFormat))
+				writer.WriteSamples(samples, 0, samples.Length);
+		}
+		private void Callback_AudioInput(object sender, CSCore.SoundIn.DataAvailableEventArgs e)
 		{
 			//Every 2 bytes in the buffer represents one sample.
-			currentAudioData.Capacity += e.BytesRecorded / 2;
-			for (int i = 0; i < e.BytesRecorded; i += 2)
+			for (int i = 0; i < e.ByteCount; i += 2)
 			{
-				short sample = (short)(e.Buffer[i] |
-									   (e.Buffer[i + 1] << 8));
-				currentAudioData.Add(sample);
+				short sample = (short)(e.Data[i] |
+									   (e.Data[i + 1] << 8));
+				float sampleF = sample / (short.MaxValue + 1.0f);
+				detector.AddSample(sampleF);
 			}
-		}
-		private void AudioInputDataStopped(object sender, StoppedEventArgs e)
-		{
-			IsListening = false;
-
 		}
 
 		private bool updatingAudioSources = false;
@@ -111,13 +122,14 @@ namespace JC
 			int selectedIndex = 0;
 			dropdown_AudioSource.Items.Clear();
 
-			for (int i = 0; i < WaveIn.DeviceCount; ++i)
+			int i = 0;
+			foreach (var device in CSCore.SoundIn.WaveInDevice.EnumerateDevices())
 			{
-				var deviceInfo = WaveIn.GetCapabilities(i);
-				dropdown_AudioSource.Items.Add(deviceInfo.ProductName);
-
-				if (deviceInfo.ProductName == deviceName)
+				dropdown_AudioSource.Items.Add(device.Name);
+				if (device.Name == deviceName)
 					selectedIndex = i;
+
+				i += 1;
 			}
 
 			dropdown_AudioSource.SelectedIndex = selectedIndex;
@@ -128,6 +140,31 @@ namespace JC
 		private void button_ToggleListening_Click(object sender, RoutedEventArgs e)
 		{
 			IsListening = !IsListening;
+		}
+
+		private void text_SampleIntervalSize_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			int i;
+			if (int.TryParse(text_SampleIntervalSize.Text, out i))
+				detector.SampleIntervalSize = i;
+		}
+		private void text_InterestingSoundThreshold_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			float f;
+			if (float.TryParse(text_InterestingSoundThreshold.Text, out f))
+				detector.InterestingSoundThreshold = f;
+		}
+		private void text_InterestingSoundMinSamples_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			int i;
+			if (int.TryParse(text_InterestingSoundMinSamples.Text, out i))
+				detector.InterestingSoundMinSamples = i;
+		}
+		private void text_InterestingSoundEndSamples_TextChanged(object sender, TextChangedEventArgs e)
+		{
+			int i;
+			if (int.TryParse(text_InterestingSoundEndSamples.Text, out i))
+				detector.InterestingSoundEndSamples = i;
 		}
 	}
 }
