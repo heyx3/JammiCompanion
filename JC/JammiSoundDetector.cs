@@ -26,7 +26,7 @@ namespace JC
 			get { return sampleBuffer.Length; }
 			set
 			{
-				if (SampleIntervalSize == value)
+				if (sampleBuffer != null && SampleIntervalSize == value)
 					return;
 
 				float[] newBuffer = new float[value];

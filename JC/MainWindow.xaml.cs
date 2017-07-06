@@ -56,7 +56,7 @@ namespace JC
 		}
 
 		private CSCore.SoundIn.WaveIn audioInput = null;
-		private JammiSoundDetector detector;
+		private JammiSoundDetector detector = null;
 
 
 		public MainWindow()
@@ -144,24 +144,36 @@ namespace JC
 
 		private void text_SampleIntervalSize_TextChanged(object sender, TextChangedEventArgs e)
 		{
+			if (detector == null)
+				return;
+
 			int i;
 			if (int.TryParse(text_SampleIntervalSize.Text, out i))
 				detector.SampleIntervalSize = i;
 		}
 		private void text_InterestingSoundThreshold_TextChanged(object sender, TextChangedEventArgs e)
 		{
+			if (detector == null)
+				return;
+
 			float f;
 			if (float.TryParse(text_InterestingSoundThreshold.Text, out f))
 				detector.InterestingSoundThreshold = f;
 		}
 		private void text_InterestingSoundMinSamples_TextChanged(object sender, TextChangedEventArgs e)
 		{
+			if (detector == null)
+				return;
+
 			int i;
 			if (int.TryParse(text_InterestingSoundMinSamples.Text, out i))
 				detector.InterestingSoundMinSamples = i;
 		}
 		private void text_InterestingSoundEndSamples_TextChanged(object sender, TextChangedEventArgs e)
 		{
+			if (detector == null)
+				return;
+
 			int i;
 			if (int.TryParse(text_InterestingSoundEndSamples.Text, out i))
 				detector.InterestingSoundEndSamples = i;

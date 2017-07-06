@@ -9,9 +9,7 @@
     <Grid>
         <Button x:Name="button_ToggleListening" Content="Start Listening" HorizontalAlignment="Left" Margin="218,10,0,0" VerticalAlignment="Top" Width="89" Click="button_ToggleListening_Click"/>
         <ComboBox x:Name="dropdown_AudioSource" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="203"/>
-        <StackPanel x:Name="panel_DetectorSettings" HorizontalAlignment="Left" Height="148" Margin="10,47,0,0" VerticalAlignment="Top" Width="297">
-        </StackPanel>
-        <DockPanel Width="297" Height="148" Margin="10,47,210,124" LastChildFill="False">
+        <DockPanel Width="297" Margin="10,176,210,10" LastChildFill="False">
             <Label x:Name="label_DetectorSettings" DockPanel.Dock="Top">Detector Settings:</Label>
             <Label DockPanel.Dock="Left" Width="30"></Label>
             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
@@ -35,5 +33,6 @@
                 <TextBox x:Name="text_InterestingSoundEndSamples" Width="50" VerticalAlignment="Center" TextChanged="text_InterestingSoundEndSamples_TextChanged">100</TextBox>
             </StackPanel>
         </DockPanel>
+        <Canvas HorizontalAlignment="Left" Height="63" Margin="10,44,0,0" VerticalAlignment="Top" Width="297"/>
     </Grid>
 </Window>
