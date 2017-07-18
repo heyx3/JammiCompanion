@@ -7,17 +7,19 @@ set "HLSL_COMPILER=C:\Program Files (x86)\Windows Kits\10\bin\x64\fxc.exe"
 :: Make sure the compiler exists.
 If NOT exist "%HLSL_COMPILER%" (
 	echo "HLSL compiler not found. Edit this batch file to use the correct path."
-	exit
+	exit 1
 )
 
 
 :: Run the compiler on each shader file.
-:: Use a function defined below.
+:: Use the "compileFX" function, defined below.
+If NOT exist JC (
+	echo "This batch file isn't running in the root of the repo."
+	exit 2
+)
 pushd JC
-call:compileFX "AudioDisplay"
+call:compileFX "AudioDisplay" || exit 3
 popd
-
-pause
 
 
 exit :: Quit before control moves to the functions defined below.

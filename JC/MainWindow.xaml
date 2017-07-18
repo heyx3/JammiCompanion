@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:eff="clr-namespace:JC;assembly=JC"
         xmlns:local="clr-namespace:JC"
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
@@ -33,6 +34,7 @@
                 <TextBox x:Name="text_InterestingSoundEndSamples" Width="50" VerticalAlignment="Center" TextChanged="text_InterestingSoundEndSamples_TextChanged">100</TextBox>
             </StackPanel>
         </DockPanel>
-        <Canvas HorizontalAlignment="Left" Height="63" Margin="10,44,0,0" VerticalAlignment="Top" Width="297"/>
+        <Image x:Name="img_AudioVisualized" HorizontalAlignment="Left" Height="63" Margin="10,44,0,0" VerticalAlignment="Top" Width="297">
+        </Image>
     </Grid>
 </Window>

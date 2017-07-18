@@ -57,6 +57,7 @@ namespace JC
 
 		private CSCore.SoundIn.WaveIn audioInput = null;
 		private JammiSoundDetector detector = null;
+		private AudioRenderEffect audioRenderEffect;
 
 
 		public MainWindow()
@@ -95,14 +96,20 @@ namespace JC
 		}
 		private void Callback_AudioInput(object sender, CSCore.SoundIn.DataAvailableEventArgs e)
 		{
+			audioRenderEffect.StartAddSamples(e.ByteCount / 2);
+
 			//Every 2 bytes in the buffer represents one sample.
 			for (int i = 0; i < e.ByteCount; i += 2)
 			{
 				short sample = (short)(e.Data[i] |
 									   (e.Data[i + 1] << 8));
-				float sampleF = sample / (short.MaxValue + 1.0f);
+				float sampleF = sample / (short.MaxValue + 1.0f); //TODO: I think the values start at short.MinValue, not 0.
+
 				detector.AddSample(sampleF);
+				audioRenderEffect.AddSample(sampleF);
 			}
+
+			audioRenderEffect.EndAddSamples();
 		}
 
 		private bool updatingAudioSources = false;

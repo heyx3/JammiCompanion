@@ -1,11 +1,10 @@
 # JammiCompanion
 
-A program that listens to birds and tries to mimic them. Written with C#, WPF, and DirectX.
+A program that listens to birds and tries to respond to them. Written with C# and WPF.
 
 ## Building/Running
 
-1. Run the "Compile Shaders" batch file. It converts all HLSL shaders in the project to compiled effect files, which the project expects to exist.
-2. Open *JC/JC.sln*, build, and run!
+Open *JC/JC.sln*, build, and run! There is a pre-build script that automatically compiles the HLSL shader code by running *Compile Shaders.bat*.
 
 ## License
 
