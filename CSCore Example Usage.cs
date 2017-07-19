@@ -1,4 +1,7 @@
-﻿using System;
+//This file is provided as an example of how to use CSCore,
+//    in case I decide later to go back to that instead of Unity's Microphone class.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
