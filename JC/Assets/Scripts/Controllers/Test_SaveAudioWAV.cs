@@ -12,24 +12,16 @@ public class Test_SaveAudioWAV : MonoBehaviour
 
 	private MicrophoneListener listener;
 	private int nextFileI = 1;
-	private float[] tempSamples = null;
 	private List<float> currentWAVData = new List<float>();
 
 	private void Start()
 	{
 		listener = new MicrophoneListener(false, null, MicIntervalSeconds, SampleFrequency);
-		listener.OnNewAudioFragment += (clip, length) =>
+		listener.OnNewAudioFragment += (clip, duration, nSamples, samplesBuffer) =>
 		{
-			int nSamples = (int)(clip.frequency * (double)length) * clip.channels;
-
-			//Read the samples into the buffer.
-			if (tempSamples == null || tempSamples.Length < nSamples)
-				tempSamples = new float[nSamples];
-			clip.GetData(tempSamples, 0); //NOTE: Unity will log a warning. Nothing we can do about that.
-
 			//Copy the samples to the WAV file data.
 			for (int i = 0; i < nSamples; ++i)
-				currentWAVData.Add(tempSamples[i]);
+				currentWAVData.Add(samplesBuffer[i]);
 		};
 	}
 	private void Update()

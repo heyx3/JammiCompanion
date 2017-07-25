@@ -18,8 +18,11 @@ public class MicrophoneListener : IDisposable
 	/// Raised when a new piece of audio from the microphone comes in.
 	/// The second argument is the actual length of the recording,
 	///     which is a bit shorter than the clip itself.
+	/// The third argument is the number of samples in the recording.
+	/// The fourth argument is a float buffer that contains the samples;
+	///     note that the buffer is generally longer than the actual set of samples.
 	/// </summary>
-	public event Action<AudioClip, float> OnNewAudioFragment;
+	public event Action<AudioClip, float, int, float[]> OnNewAudioFragment;
 
 	/// <summary>
 	/// The length of time between captured audio clips.
@@ -45,6 +48,7 @@ public class MicrophoneListener : IDisposable
 
 	private AudioClip currentClip = null;
 	private float timeSinceRestart = 0.0f;
+	private float[] samplesBuffer = null;
 
 
 	public MicrophoneListener(bool startMicNow, string device = null,
@@ -74,8 +78,7 @@ public class MicrophoneListener : IDisposable
 				//Wait until microphone position is found (?), then finish the audio source.
 				//do { } while (Microphone.GetPosition(Device) <= 0);
 
-				if (OnNewAudioFragment != null)
-					OnNewAudioFragment(currentClip, Time.time - timeSinceRestart);
+				FinishClip();
 
 				currentClip = Microphone.Start(Device, false, IntervalSeconds, SamplingFrequency);
 				NChannels = currentClip.channels;
@@ -103,9 +106,7 @@ public class MicrophoneListener : IDisposable
 		UnityEngine.Assertions.Assert.IsTrue(IsListening,
 											 "Called MicrophoneListener.Stop() before Start()");
 
-		//Put out the last clip.
-		if (OnNewAudioFragment != null)
-			OnNewAudioFragment(currentClip, Time.time - timeSinceRestart);
+		FinishClip();
 
 		IsListening = false;
 		currentClip = null;
@@ -117,5 +118,21 @@ public class MicrophoneListener : IDisposable
 	{
 		if (IsListening)
 			Stop();
+	}
+
+	private void FinishClip()
+	{
+		//Get the number of samples in the clip.
+		float length = Time.time - timeSinceRestart;
+		int nSamples = (int)(currentClip.frequency * (double)length) * currentClip.channels;
+
+		//Read the samples into the buffer.
+		if (samplesBuffer == null || samplesBuffer.Length < nSamples)
+			samplesBuffer = new float[nSamples];
+		currentClip.GetData(samplesBuffer, 0);
+
+		//Raise the event.
+		if (OnNewAudioFragment != null)
+			OnNewAudioFragment(currentClip, length, nSamples, samplesBuffer);
 	}
 }
