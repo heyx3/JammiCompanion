@@ -5,26 +5,30 @@ using UnityEngine;
 
 public class Test_AudioGraph : MonoBehaviour
 {
-	public int MicIntervalSeconds = 1;
 	public int SampleFrequency = 44100;
-	public int NSamplesPerAverage = 20,
-			   NAverages = 4096;
 
 	[SerializeField]
 	private AudioGraph audioGrapher = new AudioGraph();
 
 
-	private MicrophoneListener listener;
+	private AudioDeviceListener listener;
 
 
 	private void Awake()
 	{
-		listener = new MicrophoneListener(true, null, MicIntervalSeconds, SampleFrequency);
-		listener.OnNewAudioFragment += (clip, duration, nSamples, samplesBuffer) =>
+		listener = new AudioDeviceListener();
+		listener.OnNewSamples += (samples, samplesLen) =>
 		{
-			for (int i = 0; i < nSamples; ++i)
-				audioGrapher.AddSamples(samplesBuffer, nSamples);
+			audioGrapher.AddSamples(samples, samplesLen);
 		};
+
+		listener.Start(CSCore.SoundIn.WaveInDevice.EnumerateDevices().First().Name,
+					   SampleFrequency);
+		audioGrapher.Init();
+	}
+	private void Update()
+	{
+		audioGrapher.Update();
 	}
 	private void OnDestroy()
 	{
@@ -33,10 +37,11 @@ public class Test_AudioGraph : MonoBehaviour
 
 	private void OnGUI()
 	{
-		const float scale = 4.0f;
-		GUI.DrawTexture(new Rect(0.0f, 0.0f,
-								 audioGrapher.SampleTex.width * scale,
-								 audioGrapher.SampleTex.height * scale),
-						audioGrapher.SampleTex);
+		if (audioGrapher.SampleTex == null)
+			return;
+
+		Graphics.DrawTexture(new Rect(0.0f, 0.0f, Screen.width, Screen.height),
+							 audioGrapher.SampleTex,
+							 AudioGraph.RenderMat);
 	}
 }

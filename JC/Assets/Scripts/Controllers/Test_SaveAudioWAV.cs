@@ -7,26 +7,23 @@ using UnityEngine;
 public class Test_SaveAudioWAV : MonoBehaviour
 {
 	public string Directory = "C:\\Users\\Billy\\Desktop\\tempWAVs";
-	public int MicIntervalSeconds = 1;
 	public int SampleFrequency = 44100;
 
-	private MicrophoneListener listener;
+	private AudioDeviceListener listener;
 	private int nextFileI = 1;
 	private List<float> currentWAVData = new List<float>();
 
 	private void Start()
 	{
-		listener = new MicrophoneListener(false, null, MicIntervalSeconds, SampleFrequency);
-		listener.OnNewAudioFragment += (clip, duration, nSamples, samplesBuffer) =>
+		listener = new AudioDeviceListener();
+		listener.OnNewSamples += (samplesBuffer, nSamples) =>
 		{
 			//Copy the samples to the WAV file data.
 			for (int i = 0; i < nSamples; ++i)
 				currentWAVData.Add(samplesBuffer[i]);
 		};
-	}
-	private void Update()
-	{
-		listener.Update();
+		listener.Start(CSCore.SoundIn.WaveInDevice.EnumerateDevices().First().Name,
+					   SampleFrequency);
 	}
 	private void OnGUI()
 	{
@@ -35,10 +32,9 @@ public class Test_SaveAudioWAV : MonoBehaviour
 		{
 			if (listener.IsListening)
 			{
-				int nChannels = listener.NChannels;
 				listener.Stop();
 				if (currentWAVData.Count > 0)
-					FlushToFile(nChannels);
+					FlushToFile();
 			}
 			else
 			{
@@ -56,19 +52,15 @@ public class Test_SaveAudioWAV : MonoBehaviour
 	{
 		if (listener.IsListening)
 		{
-			int nChannels = listener.NChannels;
 			listener.Stop();
-			FlushToFile(nChannels);
+			FlushToFile();
 		}
 
 		listener.Dispose();
 	}
 
-	private void FlushToFile(int nChannels = -1)
+	private void FlushToFile()
 	{
-		if (nChannels == -1)
-			nChannels = listener.NChannels;
-
 		//Create the WAV folder if it doesn't exist.
 		if (!System.IO.Directory.Exists(Directory))
 			System.IO.Directory.CreateDirectory(Directory);
@@ -76,7 +68,7 @@ public class Test_SaveAudioWAV : MonoBehaviour
 		//Save the samples to a file.
 		SavWav.Save(System.IO.Path.Combine(Directory, nextFileI + ".wav"),
 					currentWAVData.ToArray(),
-					listener.SamplingFrequency, nChannels, currentWAVData.Count);
+					listener.SamplingFrequency, 1, currentWAVData.Count);
 		currentWAVData.Clear();
 		nextFileI += 1;
 	}

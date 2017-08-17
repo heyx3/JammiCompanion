@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 
@@ -46,22 +47,19 @@ public class AudioGraph
 	public int CurrentSample = 0,
 			   CurrentPixel = 0;
 
+	private volatile bool shouldUpdatePixels = false;
+	private volatile AutoResetEvent doneProcessingSignal = null;
 
 	/// <summary>
 	/// The sum is stored in the Green channel.
 	/// The average is stored in the Red channel, which is what the shader samples.
 	/// </summary>
 	private Color[] pixels;
+	private object pixelArrayLocker = new object();
 
 
 	public void Init()
 	{
-		//Set up buffer.
-		if (pixels == null || pixels.Length != NAverages)
-			pixels = new Color[NAverages];
-		for (int i = 0; i < pixels.Length; ++i)
-			pixels[i] = new Color(0.0f, 0.0f, 0.0f, 1.0f);
-
 		//Set up texture.
 		if (SampleTex == null)
 		{
@@ -74,11 +72,43 @@ public class AudioGraph
 			SampleTex.Resize(NAverages, 1);
 		}
 
+		//Set up thread synchronization object.
+		if (doneProcessingSignal != null)
+			doneProcessingSignal.Set();
+		doneProcessingSignal = new AutoResetEvent(true);
+		shouldUpdatePixels = false;
+
+		//Set up texture data.
+		lock (pixelArrayLocker)
+		{
+			if (pixels == null || pixels.Length != NAverages)
+				pixels = new Color[NAverages];
+			for (int i = 0; i < pixels.Length; ++i)
+				pixels[i] = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+
+			SampleTex.SetPixels(pixels);
+			SampleTex.Apply(false, false);
+		}
+
 		//Set up counters.
 		CurrentSample = 0;
 		CurrentPixel = 0;
 	}
-
+	/// <summary>
+	/// Must be called every frame for this to work properly.
+	/// </summary>
+	public void Update()
+	{
+		if (shouldUpdatePixels)
+		{
+			lock (pixelArrayLocker)
+			{
+				SampleTex.SetPixels(pixels);
+				SampleTex.Apply(false, false);
+				shouldUpdatePixels = false;
+			}
+		}
+	}
 	/// <summary>
 	/// Adds the given samples to the audio graph.
 	/// </summary>
@@ -91,42 +121,43 @@ public class AudioGraph
 	/// </param>
 	public void AddSamples(float[] buffer, int nSamples, int startOffset = 0)
 	{
-		//If there are more samples than pixels coming in, some of our math will break.
-		UnityEngine.Assertions.Assert.IsTrue(nSamples < (pixels.Length * NSamplesPerAverage));
-
-		bool pixelChanged = false;
-		for (int _i = 0; _i < nSamples; ++_i)
+		//TODO: Would using "var _pixels = pixels" save performance because it's not volatile?
+		lock (pixelArrayLocker)
 		{
-			//Get the sample.
-			int i = _i + startOffset;
-			float sample = buffer[i];
+			//If there are more samples than pixels coming in, some of our math will break.
+			UnityEngine.Assertions.Assert.IsTrue(nSamples < (pixels.Length * NSamplesPerAverage));
 
-			//Add it to the current sum.
-			var color = pixels[i];
-			color.g += sample;
-			pixels[i] = color;
-			CurrentSample += 1;
-
-			//If we've got enough samples, find the average and move on.
-			if (CurrentSample >= NSamplesPerAverage)
+			bool pixelChanged = false;
+			for (int _i = 0; _i < nSamples; ++_i)
 			{
-				pixelChanged = true;
+				//Get the sample.
+				int i = _i + startOffset;
+				float sample = buffer[i];
 
-				color.r = color.g / CurrentSample;
-				pixels[i] = color;
+				//Add it to the current sum.
+				var color = pixels[CurrentPixel];
+				color.g += sample;
+				pixels[CurrentPixel] = color;
+				CurrentSample += 1;
 
-				CurrentPixel = (CurrentPixel + 1) % pixels.Length;
-				pixels[CurrentPixel] = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+				//If we've got enough samples, find the average and move on.
+				if (CurrentSample >= NSamplesPerAverage)
+				{
+					pixelChanged = true;
 
-				CurrentSample = 0;
+					color.r = color.g / CurrentSample;
+					pixels[CurrentPixel] = color;
+
+					CurrentPixel = (CurrentPixel + 1) % pixels.Length;
+					pixels[CurrentPixel] = new Color(0.0f, 0.0f, 0.0f, 1.0f);
+
+					CurrentSample = 0;
+				}
 			}
-		}
 
-		//Update the texture if anything changed.
-		if (pixelChanged)
-		{
-			SampleTex.SetPixels(pixels);
-			SampleTex.Apply(false, false);
+			//Update the texture if anything changed.
+			if (pixelChanged)
+				shouldUpdatePixels = true;
 		}
 	}
 }
