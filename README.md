@@ -1,10 +1,6 @@
 # JammiCompanion
 
-A program that listens to birds and tries to respond to them. Written with C# and WPF.
-
-## Building/Running
-
-Open *JC/JC.sln*, build, and run! There is a pre-build script that automatically compiles the HLSL shader code by running *Compile Shaders.bat*.
+A program that listens to birds and tries to respond to them. Written with Unity3D/C#.
 
 ## License
 
