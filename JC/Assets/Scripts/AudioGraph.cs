@@ -11,6 +11,7 @@ using UnityEngine;
 [Serializable]
 public class AudioGraph
 {
+	//TODO: Pull out the audio averaging stuff into a separate class that AudioGraph and JammiSoundDetector both listen to.
 	public static Material RenderMat
 	{
 		get
@@ -23,14 +24,16 @@ public class AudioGraph
 	}
 	private static Material renderMat = null;
 
-	public static void SetRenderMatParams(float lineThickness, Color lineColor,
-										  Color belowLineColor, Color aboveLineColor,
+	public static void SetRenderMatParams(float lineThickness, float graphPower,
+										  Color lineColor, Color belowLineColor, Color aboveLineColor,
 										  Material _renderMat = null)
 	{
 		if (_renderMat == null)
 			_renderMat = RenderMat;
 
 		_renderMat.SetFloat("_LineThickness", lineThickness);
+		_renderMat.SetFloat("_GraphPower", graphPower);
+
 		_renderMat.SetColor("_LineColor", lineColor);
 		_renderMat.SetColor("_AboveColor", aboveLineColor);
 		_renderMat.SetColor("_BelowColor", belowLineColor);
@@ -109,6 +112,7 @@ public class AudioGraph
 			}
 		}
 	}
+
 	/// <summary>
 	/// Adds the given samples to the audio graph.
 	/// </summary>

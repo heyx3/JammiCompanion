@@ -7,6 +7,12 @@ public class Test_AudioGraph : MonoBehaviour
 {
 	public int SampleFrequency = 44100;
 
+	public float LineThickness = 0.05f,
+				 GraphPower = 1.0f;
+	public Color LineColor = Color.white,
+				 AboveLineColor = Color.red,
+				 BelowLineColor = Color.green;
+
 	[SerializeField]
 	private AudioGraph audioGrapher = new AudioGraph();
 
@@ -29,6 +35,8 @@ public class Test_AudioGraph : MonoBehaviour
 	private void Update()
 	{
 		audioGrapher.Update();
+		AudioGraph.SetRenderMatParams(LineThickness, GraphPower,
+									  LineColor, BelowLineColor, AboveLineColor);
 	}
 	private void OnDestroy()
 	{

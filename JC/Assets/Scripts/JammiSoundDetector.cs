@@ -106,7 +106,7 @@ public class JammiSoundDetector : IDisposable
 		{
 			case States.WaitingForSound:
 				//If a loud noise appears, see if it's the start of something interesting.
-				if (sample > InterestingSoundThreshold)
+				if (Math.Abs(sample) > InterestingSoundThreshold)
 				{
 					currentState = States.ConfirmingSound;
 					state_Confirming_SamplesLeft = InterestingSoundMinSamples - 1;

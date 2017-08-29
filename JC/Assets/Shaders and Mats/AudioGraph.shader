@@ -5,6 +5,7 @@
 		_MainTex ("Texture", 2D) = "white" {}
 
         _LineThickness ("Line Thickness", Float) = 0.05
+        _GraphPower ("Graph Power", Float) = 1.0
 
         _LineColor ("Line Color", Color) = (1,1,1,1)
         _AboveColor ("Above line Color", Color) = (1,0,0,1)
@@ -42,12 +43,13 @@
 
 			sampler2D _MainTex;
             float4 _MainTex_TexelSize;
-            float _LineThickness;
+            float _LineThickness, _GraphPower;
             float4 _LineColor, _AboveColor, _BelowColor;
 
 			fixed4 frag (v2f i) : SV_Target
 			{
                 float sample = tex2D(_MainTex, i.uv).x;
+                sample = pow(abs(sample), _GraphPower);
 
                 float distAboveLine = i.uv.y - sample;
                 float isOnLine = step(_LineThickness, abs(distAboveLine));

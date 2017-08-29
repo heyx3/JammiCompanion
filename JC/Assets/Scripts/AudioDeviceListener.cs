@@ -26,6 +26,7 @@ public class AudioDeviceListener : IDisposable
 	/// Raised when this listener has new samples in from the audio device.
 	/// The first argument is the sample buffer.
 	/// The second argument is the number of available samples in the buffer.
+	/// The samples range from -1 to +1.
 	/// NOTE: this is raised in a different thread;
 	///     don't directly call Unity API methods from this event.
 	/// </summary>
@@ -83,11 +84,16 @@ public class AudioDeviceListener : IDisposable
 			samplesBuffer = new float[e.ByteCount / 2];
 
 		//Put the samples in the buffer.
+		short highestSample = short.MinValue,
+			  lowestSample = short.MaxValue;
 		for (int i = 0; i < e.ByteCount; i += 2)
 		{
 			short sample = (short)(e.Data[i] |
 								   (e.Data[i + 1] << 8));
-			samplesBuffer[i / 2] = sample / (short.MaxValue + 1.0f); //TODO: I think the values start at short.MinValue, not 0.
+			highestSample = Math.Max(highestSample, sample);
+			lowestSample = Math.Min(lowestSample, sample);
+
+			samplesBuffer[i / 2] = sample / (short.MaxValue + 1.0f);
 		}
 
 		//Raise the event.
